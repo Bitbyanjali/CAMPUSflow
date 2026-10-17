@@ -1,13 +1,14 @@
-import { useState, useContext } from 'react'
+import { useState, useContext} from 'react'
 import TaskCard from '../components/TaskCard'
 import './Tasks.css'
-
 import { SubjectContext } from '../context/SubjectContext'
 import { TaskContext } from '../context/TaskContext'
 
+
 function Tasks() {
+  const [taskError, setTaskError] = useState('')
   const { subjectList } = useContext(SubjectContext)
-  const { taskList, setTaskList } = useContext(TaskContext)
+  const { taskList, setTaskList, loadingTasks } = useContext(TaskContext)
 
   const [showForm, setShowForm] = useState(false)
 
@@ -17,63 +18,159 @@ function Tasks() {
     dueDate: '',
   })
 
-  const toggleTask = (id) => {
-    setTaskList(
-      taskList.map((task) =>
-        task.id === id
+  
+const toggleTask = async (id) => {
+  const task = taskList.find((item) => item.id === id);
+
+  if (!task) return;
+
+  setTaskError('');
+
+  try {
+    const response = await fetch(
+      `http://localhost:5000/api/tasks/${id}`,
+      {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({
+          completed: !task.completed,
+        }),
+      }
+    );
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(
+        data.message || 'Failed to update task.'
+      );
+    }
+
+    setTaskList((prevTasks) =>
+      prevTasks.map((item) =>
+        item.id === id
           ? {
-              ...task,
-              completed: !task.completed,
+              ...item,
+              completed: data.task.completed,
             }
-          : task
+          : item
       )
-    )
+    );
+  } catch (error) {
+    setTaskError(
+      error.message || 'Unable to update task.'
+    );
   }
+};
 
-  const deleteTask = (id) => {
-    setTaskList(
-      taskList.filter((task) => task.id !== id)
-    )
-  }
 
-  const handleInputChange = (e) => {
-    const { name, value } = e.target
+const deleteTask = async (id) => {
+  setTaskError('');
 
-    setNewTask({
-      ...newTask,
-      [name]: value,
-    })
-  }
+  try {
+    const response = await fetch(
+      `http://localhost:5000/api/tasks/${id}`,
+      {
+        method: 'DELETE',
+        credentials: 'include',
+      }
+    );
 
-  const addTask = (e) => {
-    e.preventDefault()
+    const data = await response.json();
 
-    if (
-      !newTask.title.trim() ||
-      !newTask.subject.trim() ||
-      !newTask.dueDate.trim()
-    ) {
-      return
+    if (!response.ok) {
+      throw new Error(
+        data.message || 'Failed to delete task.'
+      );
     }
 
-    const task = {
-      id: Date.now(),
-      title: newTask.title,
-      subject: newTask.subject,
-      dueDate: newTask.dueDate,
-      completed: false,
+    setTaskList((prevTasks) =>
+      prevTasks.filter((task) => task.id !== id)
+    );
+  } catch (error) {
+    setTaskError(
+      error.message || 'Unable to delete task.'
+    );
+  }
+};
+
+
+const handleInputChange = (e) => {
+  const { name, value } = e.target;
+
+  setNewTask((prevTask) => ({
+    ...prevTask,
+    [name]: value,
+  }));
+};
+
+  
+const addTask = async (e) => {
+  e.preventDefault();
+
+  if (
+    !newTask.title.trim() ||
+    !newTask.subject.trim() ||
+    !newTask.dueDate.trim()
+  ) {
+    return;
+  }
+
+  setTaskError('');
+
+  try {
+    const response = await fetch(
+      'http://localhost:5000/api/tasks',
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({
+          title: newTask.title.trim(),
+          subject: newTask.subject,
+          dueDate: newTask.dueDate.trim(),
+          completed: false,
+        }),
+      }
+    );
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(
+        data.message || 'Failed to create task.'
+      );
     }
 
-    setTaskList([...taskList, task])
+    const savedTask = {
+      ...data.task,
+      id: data.task._id,
+    };
+
+    setTaskList((prevTasks) => [
+      savedTask,
+      ...prevTasks,
+    ]);
 
     setNewTask({
       title: '',
       subject: '',
       dueDate: '',
-    })
+    });
 
-    setShowForm(false)
+    setShowForm(false);
+  } catch (error) {
+    setTaskError(
+      error.message || 'Unable to create task.'
+    );
   }
+};
+
 
   const completedTasks = taskList.filter(
     (task) => task.completed
@@ -83,8 +180,13 @@ function Tasks() {
     (task) => !task.completed
   ).length
 
-  return (
-    <div className="tasks-page">
+    return (
+      <div className="tasks-page">
+        {loadingTasks && <p>Loading tasks...</p>}
+
+        {!loadingTasks && taskError && (
+          <p role="alert">{taskError}</p>
+        )}
 
       {/* Header */}
       <div className="tasks-header">

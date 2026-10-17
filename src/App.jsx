@@ -13,6 +13,10 @@ import { SubjectProvider } from './context/SubjectContext'
 import { TaskProvider } from './context/TaskContext'
 import { AttendanceProvider } from './context/AttendanceContext'
 import { PlacementProvider } from './context/PlacementContext'
+import Login from './pages/Login'
+import Signup from './pages/Signup'
+import ProtectedRoute from './components/ProtectedRoute'
+import { AuthProvider } from './context/AuthContext'
 
 
 function App() {
@@ -22,81 +26,103 @@ function App() {
     setSidebarOpen((previous) => !previous)
   }
 
-  return (
+  
+return (
+  <AuthProvider>
     <PlacementProvider>
-    <SubjectProvider>
-      <TaskProvider>
-        <AttendanceProvider>
-          <BrowserRouter>
+      <SubjectProvider>
+        <TaskProvider>
+          <AttendanceProvider>
+            <BrowserRouter>
+              <Sidebar
+                isOpen={sidebarOpen}
+                onToggle={toggleSidebar}
+              />
 
-            <Sidebar
-              isOpen={sidebarOpen}
-              onToggle={toggleSidebar}
-            />
+              {!sidebarOpen && (
+                <button
+                  className="sidebar-show-button"
+                  onClick={toggleSidebar}
+                  aria-label="Show sidebar"
+                >
+                  <Menu size={21} />
+                </button>
+              )}
 
-            {!sidebarOpen && (
-              <button
-                className="sidebar-show-button"
-                onClick={toggleSidebar}
-                aria-label="Show sidebar"
+              <div
+                className={`app-main ${
+                  sidebarOpen
+                    ? 'sidebar-is-open'
+                    : 'sidebar-is-closed'
+                }`}
               >
-                <Menu size={21} />
-              </button>
-            )}
+                <Navbar />
 
-            <div
-              className={`app-main ${
-                sidebarOpen
-                  ? 'sidebar-is-open'
-                  : 'sidebar-is-closed'
-              }`}
-            >
-              <Navbar />
+                <main className="page-content">
+                  <Routes>
+                    <Route path="/login" element={<Login />} />
+                    <Route path="/signup" element={<Signup />} />
 
-              <main className="page-content">
-                <Routes>
 
-                  <Route
-                    path="/"
-                    element={
-                      <Dashboard
-                        name="Nandini"
-                        semester="3rd Semester"
+                      <Route
+                        path="/"
+                        element={
+                          <ProtectedRoute>
+                            <Dashboard
+                              name="Nandini"
+                              semester="3rd Semester"
+                            />
+                          </ProtectedRoute>
+                        }
                       />
-                    }
-                  />
 
-                  <Route
-                    path="/subjects"
-                    element={<Subjects />}
-                  />
+                                              
+                      <Route
+                        path="/subjects"
+                        element={
+                          <ProtectedRoute>
+                            <Subjects />
+                          </ProtectedRoute>
+                        }
+                      />
 
-                  <Route
-                    path="/tasks"
-                    element={<Tasks />}
-                  />
+                      <Route
+                        path="/tasks"
+                        element={
+                          <ProtectedRoute>
+                            <Tasks />
+                          </ProtectedRoute>
+                        }
+                      />
 
-                  <Route
-                    path="/attendance"
-                    element={<Attendance />}
-                  />
+                      <Route
+                        path="/attendance"
+                        element={
+                          <ProtectedRoute>
+                            <Attendance />
+                          </ProtectedRoute>
+                        }
+                      />
 
-                  <Route
-                    path="/placement"
-                    element={<Placement />}
-                  />
+                      <Route
+                        path="/placement"
+                        element={
+                          <ProtectedRoute>
+                            <Placement />
+                          </ProtectedRoute>
+                        }
+                      />
 
-                </Routes>
-              </main>
-
-            </div>
-
-          </BrowserRouter>
-        </AttendanceProvider>
-      </TaskProvider>
-    </SubjectProvider>
+                  </Routes>
+                </main>
+              </div>
+            </BrowserRouter>
+          </AttendanceProvider>
+        </TaskProvider>
+      </SubjectProvider>
     </PlacementProvider>
-  )
+  </AuthProvider>
+)
 }
 
 export default App

@@ -1,4 +1,4 @@
-import { useState, useContext } from "react";
+import { useState, useContext, useEffect } from "react";
 import "./Attendance.css";
 import { SubjectContext } from "../context/SubjectContext";
 import { AttendanceContext } from "../context/AttendanceContext";
@@ -7,6 +7,44 @@ function Attendance() {
     const { subjectList } = useContext(SubjectContext);
 
     const { attendance, setAttendance } = useContext(AttendanceContext);
+    const saveAttendance = async (subjectId, values) => {
+  if (
+    values.total === "" ||
+    values.attended === "" ||
+    Number(values.total) < 0 ||
+    Number(values.attended) < 0 ||
+    Number(values.attended) > Number(values.total) ||
+    !Number.isInteger(Number(values.total)) ||
+    !Number.isInteger(Number(values.attended))
+  ) {
+    return;
+  }
+
+  try {
+    const response = await fetch(
+      `http://localhost:5000/api/attendance/${subjectId}`,
+      {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+        body: JSON.stringify({
+          totalClasses: Number(values.total),
+          attendedClasses: Number(values.attended),
+        }),
+      }
+    );
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.message || "Failed to save attendance.");
+    }
+  } catch (error) {
+    console.error("Save attendance error:", error);
+  }
+};
 
   return (
     <div className="attendance-page">
@@ -45,30 +83,58 @@ function Attendance() {
               type="number"
               placeholder="Total classes"
               value={subjectAttendance.total}
-              onChange={(e) =>
-                setAttendance({
-                  ...attendance,
-                  [subject.id]: {
-                    ...subjectAttendance,
-                    total: e.target.value,
-                  },
-                })
+              onChange={(e) => {
+              const updatedValues = {
+                ...subjectAttendance,
+                total: e.target.value,
+              };
+
+              setAttendance((prev) => ({
+                ...prev,
+                [subject.id]: updatedValues,
+              }));
+
+              if (
+                updatedValues.total !== "" &&
+                updatedValues.attended !== "" &&
+                Number(updatedValues.total) >= Number(updatedValues.attended) &&
+                Number.isInteger(Number(updatedValues.total)) &&
+                Number.isInteger(Number(updatedValues.attended)) &&
+                Number(updatedValues.total) >= 0 &&
+                Number(updatedValues.attended) >= 0
+              ) {
+                saveAttendance(subject.id, updatedValues);
               }
+            }}
             />
 
             <input
               type="number"
               placeholder="Classes attended"
               value={subjectAttendance.attended}
-              onChange={(e) =>
-                setAttendance({
-                  ...attendance,
-                  [subject.id]: {
-                    ...subjectAttendance,
-                    attended: e.target.value,
-                  },
-                })
-              }
+              onChange={(e) => {
+                const updatedValues = {
+                  ...subjectAttendance,
+                  attended: e.target.value,
+                };
+
+                setAttendance((prev) => ({
+                  ...prev,
+                  [subject.id]: updatedValues,
+                }));
+
+                if (
+                  updatedValues.total !== "" &&
+                  updatedValues.attended !== "" &&
+                  Number(updatedValues.attended) <= Number(updatedValues.total) &&
+                  Number(updatedValues.total) >= 0 &&
+                  Number(updatedValues.attended) >= 0 &&
+                  Number.isInteger(Number(updatedValues.total)) &&
+                  Number.isInteger(Number(updatedValues.attended))
+                ) {
+                  saveAttendance(subject.id, updatedValues);
+                }
+              }}
             />
 
             {isInvalid && (

@@ -1,26 +1,50 @@
-import { NavLink } from 'react-router-dom'
+
+import { NavLink, useNavigate } from 'react-router-dom'
 import {
   LayoutDashboard,
   BookOpen,
   CheckSquare,
   CalendarCheck,
   Briefcase,
+  LogOut,
 } from 'lucide-react'
 import './Navbar.css'
+import { useAuth } from "../context/AuthContext";
 
 function Navbar() {
+  const navigate = useNavigate()
+  const { setUser } = useAuth();
+
+  async function handleLogout() {
+    try {
+      const response = await fetch(
+        'http://localhost:5000/api/auth/logout',
+        {
+          method: 'POST',
+          credentials: 'include',
+        }
+      )
+
+      if (!response.ok) {
+        throw new Error('Logout failed. Please try again.')
+      }
+
+      setUser(null);
+      navigate('/login', { replace: true })
+    } catch (error) {
+      console.error('Logout error:', error)
+      alert(error.message || 'Unable to connect to server.')
+    }
+  }
+
   return (
     <nav className="navbar">
-
-      {/* LOGO */}
       <NavLink to="/" className="navbar-logo">
         <span className="logo-campus">CAMPUS</span>
         <span className="logo-flow">Flow</span>
       </NavLink>
 
-      {/* NAVIGATION */}
       <div className="navbar-links">
-
         <NavLink to="/" end>
           <LayoutDashboard size={17} strokeWidth={2.2} />
           <span>Dashboard</span>
@@ -46,8 +70,15 @@ function Navbar() {
           <span>Placement</span>
         </NavLink>
 
+        <button
+          type="button"
+          className="navbar-logout"
+          onClick={handleLogout}
+        >
+          <LogOut size={17} />
+          <span>Logout</span>
+        </button>
       </div>
-
     </nav>
   )
 }

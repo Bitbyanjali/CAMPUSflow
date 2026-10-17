@@ -14,48 +14,126 @@ function Subjects() {
 
   const [editingSubjectId, setEditingSubjectId] = useState(null);
 
-  const addSubject = () => {
-      if (!newSubject.name.trim() || !newSubject.code.trim()) {
-        alert("Please enter subject name and code");
-        return;
+  
+const addSubject = async () => {
+  if (!newSubject.name.trim() || !newSubject.code.trim()) {
+    alert("Please enter subject name and code");
+    return;
+  }
+
+  try {
+    
+if (editingSubjectId !== null) {
+  const response = await fetch(
+    `http://localhost:5000/api/subjects/${editingSubjectId}`,
+    {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      credentials: "include",
+      body: JSON.stringify({
+        name: newSubject.name.trim(),
+        code: newSubject.code.trim(),
+      }),
+    }
+  );
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(data.message || "Failed to update subject.");
+  }
+
+  const updatedSubject = {
+    ...data.subject,
+    id: data.subject._id,
+  };
+
+  setSubjectList((prevSubjects) =>
+    prevSubjects.map((subject) =>
+      subject.id === editingSubjectId
+        ? updatedSubject
+        : subject
+    )
+  );
+
+  setNewSubject({ name: "", code: "" });
+  setEditingSubjectId(null);
+  setShowForm(false);
+  return;
+}
+
+
+    const response = await fetch(
+      "http://localhost:5000/api/subjects",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+        body: JSON.stringify({
+          name: newSubject.name.trim(),
+          code: newSubject.code.trim(),
+        }),
       }
+    );
 
-      if (editingSubjectId !== null) {
-        setSubjectList(
-          subjectList.map((subject) =>
-            subject.id === editingSubjectId
-              ? {
-                  ...subject,
-                  name: newSubject.name,
-                  code: newSubject.code,
-                }
-              : subject
-          )
-        );
-      } else {
-        const subject = {
-          id: Date.now(),
-          name: newSubject.name,
-          code: newSubject.code,
-        };
+    const data = await response.json();
 
-        setSubjectList([...subjectList, subject]);
-      }
+    if (!response.ok) {
+      throw new Error(data.message || "Failed to add subject.");
+    }
 
-      setNewSubject({
-        name: "",
-        code: "",
-      });
-
-      setEditingSubjectId(null);
-      setShowForm(false);
+    const savedSubject = {
+      ...data.subject,
+      id: data.subject._id,
     };
 
-const deleteSubject = (id) => {
-  setSubjectList(
-    subjectList.filter((subject) => subject.id !== id)
-  );
+    setSubjectList((prevSubjects) => [
+      ...prevSubjects,
+      savedSubject,
+    ]);
+
+    setNewSubject({ name: "", code: "" });
+    setEditingSubjectId(null);
+    setShowForm(false);
+  } catch (error) {
+    console.error("Add subject error:", error);
+    alert(error.message || "Unable to add subject.");
+  }
 };
+
+
+  
+const deleteSubject = async (id) => {
+  try {
+    const response = await fetch(
+      `http://localhost:5000/api/subjects/${id}`,
+      {
+        method: "DELETE",
+        credentials: "include",
+      }
+    );
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(
+        data.message || "Failed to delete subject."
+      );
+    }
+
+    setSubjectList((prevSubjects) =>
+      prevSubjects.filter((subject) => subject.id !== id)
+    );
+  } catch (error) {
+    console.error("Delete subject error:", error);
+    alert(error.message || "Unable to delete subject.");
+  }
+};
+
 
 const editSubject = (id) => {
   const subject = subjectList.find(

@@ -1,24 +1,190 @@
-import { useContext } from 'react'
+import { useContext, useState } from 'react'
 import { PlacementContext } from '../context/PlacementContext'
 import './placement.css'
 function Placement() {
   const { placements, setPlacements } = useContext(PlacementContext)
 
-  
-const handleStatusChange = (id, newStatus) => {
-  setPlacements((currentPlacements) =>
-    currentPlacements.map((placement) => {
-      if (placement.id !== id) return placement
+  const [showForm, setShowForm] = useState(false);
+  const [editingId, setEditingId] = useState(null);
+  const [formError, setFormError] = useState("");
+  const [saving, setSaving] = useState(false);
 
-      return {
-        ...placement,
-        status: newStatus,
-        hasApplied: placement.hasApplied || newStatus === 'Applied' || newStatus === 'Interview' || newStatus === 'Selected' || newStatus === 'Rejected',
-        hasInterviewed: placement.hasInterviewed || newStatus === 'Interview' || newStatus === 'Selected' || newStatus === 'Rejected',
+  const [formData, setFormData] = useState({
+    company: "",
+    role: "",
+    package: "",
+    driveDate: "",
+    eligibility: "",
+    status: "Open",
+  });
+
+  
+const handleEditPlacement = (placement) => {
+  setEditingId(placement.id);
+  setFormData({
+    company: placement.company || "",
+    role: placement.role || "",
+    package: placement.package || "",
+    driveDate: placement.driveDate
+      ? placement.driveDate.slice(0, 10)
+      : "",
+    eligibility: placement.eligibility || "",
+    status: placement.status || "Open",
+  });
+  setFormError("");
+  setShowForm(true);
+  window.scrollTo({ top: 0, behavior: "smooth" });
+};
+
+    
+const handleFormChange = (event) => {
+  const { name, value } = event.target;
+
+  setFormData((current) => ({
+    ...current,
+    [name]: value,
+  }));
+};
+
+
+const handleAddPlacement = async (event) => {
+  event.preventDefault();
+  setFormError("");
+
+  if (!formData.company.trim() || !formData.role.trim()) {
+    setFormError("Company and role are required.");
+    return;
+  }
+
+  if (
+    formData.company.trim().length > 100 ||
+    formData.role.trim().length > 100
+  ) {
+    setFormError("Company and role cannot exceed 100 characters.");
+    return;
+  }
+
+  setSaving(true);
+
+  try {
+    const isEditing = editingId !== null;
+
+    const response = await fetch(
+      isEditing
+        ? `http://localhost:5000/api/placement/${editingId}`
+        : "http://localhost:5000/api/placement",
+      {
+        method: isEditing ? "PATCH" : "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+        body: JSON.stringify({
+          ...formData,
+          company: formData.company.trim(),
+          role: formData.role.trim(),
+        }),
       }
-    })
-  )
-}
+    );
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.message || "Failed to save placement.");
+    }
+
+    if (isEditing) {
+      const updatedPlacement = {
+        ...data.placement,
+        id: data.placement._id,
+      };
+
+      setPlacements((current) =>
+        current.map((placement) =>
+          placement.id === editingId ? updatedPlacement : placement
+        )
+      );
+    } else {
+      const newPlacement = {
+        ...data.placement,
+        id: data.placement._id,
+        hasApplied: false,
+        hasInterviewed: false,
+      };
+
+      setPlacements((current) => [newPlacement, ...current]);
+    }
+
+    setFormData({
+      company: "",
+      role: "",
+      package: "",
+      driveDate: "",
+      eligibility: "",
+      status: "Open",
+    });
+
+    setEditingId(null);
+    setShowForm(false);
+  } catch (error) {
+    setFormError(error.message || "Unable to save placement.");
+  } finally {
+    setSaving(false);
+  }
+};
+
+
+const handleStatusChange = async (id, newStatus) => {
+  const currentPlacement = placements.find(
+    (placement) => placement.id === id
+  );
+
+  if (!currentPlacement) return;
+
+  const previousPlacements = placements;
+
+  const updatedPlacement = {
+    ...currentPlacement,
+    status: newStatus,
+    hasApplied:
+      currentPlacement.hasApplied ||
+      ["Applied", "Interview", "Selected", "Rejected"].includes(newStatus),
+    hasInterviewed:
+      currentPlacement.hasInterviewed ||
+      ["Interview", "Selected", "Rejected"].includes(newStatus),
+  };
+
+  setPlacements((current) =>
+    current.map((placement) =>
+      placement.id === id ? updatedPlacement : placement
+    )
+  );
+
+  try {
+    const response = await fetch(
+      `http://localhost:5000/api/placement/${id}`,
+      {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+        body: JSON.stringify({ status: newStatus }),
+      }
+    );
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.message || "Failed to update placement status.");
+    }
+  } catch (error) {
+    setPlacements(previousPlacements);
+    console.error("Update placement status error:", error);
+    alert(error.message || "Unable to update placement status.");
+  }
+};
+
 
     const totalDrives = placements.length;
 
@@ -42,7 +208,147 @@ const rejectedCount = placements.filter(
 
   return (
     <div className="placement-page">
-      <h1>Placement</h1>
+      
+<div className="placement-header">
+  <div>
+    <h1>Placement</h1>
+    <p>Manage your placement preparation and opportunities.</p>
+  </div>
+
+  <button
+    type="button"
+    className="add-placement-btn"
+    onClick={() => {
+      if (showForm) {
+        setShowForm(false);
+        setEditingId(null);
+        setFormError("");
+        setFormData({
+          company: "",
+          role: "",
+          package: "",
+          driveDate: "",
+          eligibility: "",
+          status: "Open",
+        });
+      } else {
+        setShowForm(true);
+        setEditingId(null);
+        setFormError("");
+      }
+    }}>
+    {showForm ? "Cancel" : "+ Add Placement"}
+  </button>
+</div>
+
+{showForm && (
+  <form className="placement-form" onSubmit={handleAddPlacement}>
+    <h2>{editingId ? "Edit Placement" : "Add New Placement"}</h2>
+
+    <div className="placement-form-grid">
+      <label>
+        Company *
+        <input
+          name="company"
+          value={formData.company}
+          onChange={handleFormChange}
+          maxLength={100}
+          required
+          placeholder="e.g. Google"
+        />
+      </label>
+
+      <label>
+        Role *
+        <input
+          name="role"
+          value={formData.role}
+          onChange={handleFormChange}
+          maxLength={100}
+          required
+          placeholder="e.g. Software Engineer"
+        />
+      </label>
+
+      <label>
+        Package
+        <input
+          name="package"
+          value={formData.package}
+          onChange={handleFormChange}
+          placeholder="e.g. 12 LPA"
+        />
+      </label>
+
+      <label>
+        Drive Date
+        <input
+          type="date"
+          name="driveDate"
+          value={formData.driveDate}
+          onChange={handleFormChange}
+        />
+      </label>
+
+      <label>
+        Eligibility
+        <input
+          name="eligibility"
+          value={formData.eligibility}
+          onChange={handleFormChange}
+          placeholder="e.g. 6.5 CGPA"
+        />
+      </label>
+
+      <label>
+        Status
+        <select
+          name="status"
+          value={formData.status}
+          onChange={handleFormChange}
+        >
+          <option value="Open">Open</option>
+          <option value="Applied">Applied</option>
+          <option value="Interview">Interview</option>
+          <option value="Selected">Selected</option>
+          <option value="Rejected">Rejected</option>
+        </select>
+      </label>
+    </div>
+
+    {formError && (
+      <p className="placement-form-error">{formError}</p>
+    )}
+
+    <div className="placement-form-actions">
+  <button type="submit" disabled={saving}>
+    {saving ? "Saving..." : editingId ? "Update Placement" : "Save Placement"}
+  </button>
+
+  <button
+    type="button"
+    className="cancel-placement-btn"
+    disabled={saving}
+    onClick={() => {
+      setShowForm(false);
+      setEditingId(null);
+      setFormError("");
+      setFormData({
+        company: "",
+        role: "",
+        package: "",
+        driveDate: "",
+        eligibility: "",
+        status: "Open",
+      });
+    }}
+  >
+    Cancel
+  </button>
+</div>
+  </form>
+)}
+
       <p>Manage your placement preparation and opportunities.</p>
 
       <div className="placement-overview">
@@ -145,6 +451,14 @@ const rejectedCount = placements.filter(
         <strong className={`status-${placement.status.toLowerCase()}`}>
         {placement.status}
       </strong>
+
+      <button
+      type="button"
+      className="edit-placement-btn"
+      onClick={() => handleEditPlacement(placement)}
+    >
+      Edit
+    </button>
           {placement.status === "Open" && (
             <button
               type="button"
