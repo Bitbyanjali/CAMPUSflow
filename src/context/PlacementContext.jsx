@@ -1,6 +1,7 @@
 
 import { createContext, useState, useEffect } from "react";
 import { useAuth } from "./AuthContext";
+import { API_URL } from "../api/config";
 
 export const PlacementContext = createContext();
 
@@ -17,7 +18,7 @@ export function PlacementProvider({ children }) {
 
       try {
         const response = await fetch(
-          "http://localhost:5000/api/placement",
+          `${API_URL}/api/placement`,
           {
             method: "GET",
             credentials: "include",

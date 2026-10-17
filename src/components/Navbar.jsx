@@ -10,6 +10,7 @@ import {
 } from 'lucide-react'
 import './Navbar.css'
 import { useAuth } from "../context/AuthContext";
+import { API_URL } from "../api/config";
 
 function Navbar() {
   const navigate = useNavigate()
@@ -18,7 +19,7 @@ function Navbar() {
   async function handleLogout() {
     try {
       const response = await fetch(
-        'http://localhost:5000/api/auth/logout',
+        `${API_URL}/api/auth/logout`,
         {
           method: 'POST',
           credentials: 'include',

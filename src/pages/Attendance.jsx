@@ -2,6 +2,7 @@ import { useState, useContext, useEffect } from "react";
 import "./Attendance.css";
 import { SubjectContext } from "../context/SubjectContext";
 import { AttendanceContext } from "../context/AttendanceContext";
+import { API_URL } from "../api/config";
 
 function Attendance() {
     const { subjectList } = useContext(SubjectContext);
@@ -22,7 +23,7 @@ function Attendance() {
 
   try {
     const response = await fetch(
-      `http://localhost:5000/api/attendance/${subjectId}`,
+      `${API_URL}/api/attendance/${subjectId}`,
       {
         method: "PUT",
         headers: {

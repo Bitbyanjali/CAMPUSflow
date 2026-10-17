@@ -1,6 +1,8 @@
 import { useContext, useState } from 'react'
 import { PlacementContext } from '../context/PlacementContext'
 import './placement.css'
+import { API_URL } from "../api/config";
+
 function Placement() {
   const { placements, setPlacements } = useContext(PlacementContext)
 
@@ -71,8 +73,8 @@ const handleAddPlacement = async (event) => {
 
     const response = await fetch(
       isEditing
-        ? `http://localhost:5000/api/placement/${editingId}`
-        : "http://localhost:5000/api/placement",
+        ? `${API_URL}/api/placement/${editingId}`
+        : `${API_URL}/api/placement`,
       {
         method: isEditing ? "PATCH" : "POST",
         headers: {
@@ -162,7 +164,7 @@ const handleStatusChange = async (id, newStatus) => {
 
   try {
     const response = await fetch(
-      `http://localhost:5000/api/placement/${id}`,
+      `${API_URL}/api/placement/${id}`,
       {
         method: "PATCH",
         headers: {

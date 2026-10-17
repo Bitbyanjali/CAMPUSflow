@@ -1,6 +1,7 @@
 
 import { createContext, useState, useEffect } from "react";
 import { useAuth } from "./AuthContext";
+import { API_URL } from "../api/config";
 
 export const AttendanceContext = createContext();
 
@@ -17,7 +18,7 @@ export function AttendanceProvider({ children }) {
 
       try {
         const response = await fetch(
-          "http://localhost:5000/api/attendance",
+          `${API_URL}/api/attendance`,
           {
             method: "GET",
             credentials: "include",

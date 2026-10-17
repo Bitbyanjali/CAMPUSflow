@@ -1,6 +1,7 @@
 import { useState, useContext } from "react";
 import "./Subjects.css";
 import { SubjectContext } from "../context/SubjectContext";
+import { API_URL } from "../api/config";
 
 function Subjects() {
   const { subjectList, setSubjectList } = useContext(SubjectContext);
@@ -25,7 +26,7 @@ const addSubject = async () => {
     
 if (editingSubjectId !== null) {
   const response = await fetch(
-    `http://localhost:5000/api/subjects/${editingSubjectId}`,
+    `${API_URL}/api/subjects/${editingSubjectId}`,
     {
       method: "PATCH",
       headers: {
@@ -66,7 +67,7 @@ if (editingSubjectId !== null) {
 
 
     const response = await fetch(
-      "http://localhost:5000/api/subjects",
+      `${API_URL}/api/subjects`,
       {
         method: "POST",
         headers: {
@@ -110,7 +111,7 @@ if (editingSubjectId !== null) {
 const deleteSubject = async (id) => {
   try {
     const response = await fetch(
-      `http://localhost:5000/api/subjects/${id}`,
+      `${API_URL}/api/subjects/${id}`,
       {
         method: "DELETE",
         credentials: "include",

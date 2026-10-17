@@ -1,6 +1,7 @@
 
 import { createContext, useState, useEffect } from "react";
 import { useAuth } from "./AuthContext";
+import { API_URL } from "../api/config";
 
 export const TaskContext = createContext();
 
@@ -17,7 +18,7 @@ export function TaskProvider({ children }) {
 
       try {
         const response = await fetch(
-          "http://localhost:5000/api/tasks",
+          `${API_URL}/api/tasks`,
           {
             method: "GET",
             credentials: "include",

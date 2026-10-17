@@ -2,6 +2,7 @@
 import { createContext, useState, useEffect } from "react";
 import { subjects as initialSubjects } from "../data/subjects";
 import { useAuth } from "./AuthContext";
+import { API_URL } from "../api/config";
 
 export const SubjectContext = createContext();
 
@@ -27,7 +28,7 @@ export function SubjectProvider({ children }) {
     async function fetchSubjects() {
       try {
         const response = await fetch(
-          "http://localhost:5000/api/subjects",
+          `${API_URL}/api/subjects`,
           {
             method: "GET",
             credentials: "include",

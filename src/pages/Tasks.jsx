@@ -3,6 +3,7 @@ import TaskCard from '../components/TaskCard'
 import './Tasks.css'
 import { SubjectContext } from '../context/SubjectContext'
 import { TaskContext } from '../context/TaskContext'
+import { API_URL } from "../api/config";
 
 
 function Tasks() {
@@ -28,7 +29,7 @@ const toggleTask = async (id) => {
 
   try {
     const response = await fetch(
-      `http://localhost:5000/api/tasks/${id}`,
+      `${API_URL}/api/tasks/${id}`,
       {
         method: 'PATCH',
         headers: {
@@ -72,7 +73,7 @@ const deleteTask = async (id) => {
 
   try {
     const response = await fetch(
-      `http://localhost:5000/api/tasks/${id}`,
+      `${API_URL}/api/tasks/${id}`,
       {
         method: 'DELETE',
         credentials: 'include',
@@ -123,7 +124,7 @@ const addTask = async (e) => {
 
   try {
     const response = await fetch(
-      'http://localhost:5000/api/tasks',
+      `${API_URL}/api/tasks`,
       {
         method: 'POST',
         headers: {
