@@ -1,6 +1,6 @@
 
 import { createContext, useState, useEffect } from "react";
-import { subjects as initialSubjects } from "../data/subjects";
+import { subjects as initialSubjects } from "../data/Subjects.js";
 import { useAuth } from "./AuthContext";
 import { API_URL } from "../api/config";
 
